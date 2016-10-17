@@ -75,7 +75,7 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
     }
 
     @Override
-    public IFlexible getItem(int position) {
+    public T getItem(int position) {
         return mItems.get(position);
     }
 
