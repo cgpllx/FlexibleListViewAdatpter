@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -94,9 +95,40 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
         return getItem(position).isEnabled();
     }
 
+    private HashMap<Integer, IFlexible> mTypeInstances = new HashMap<>();
+
+    /**
+     * 讲type和 t 映射mTypeInstancesz中
+     *
+     * @param item item
+     */
+    private void mapViewTypeFrom(IFlexible item) {
+
+        if (item != null && !mTypeInstances.containsKey(item.getLayoutRes())) {
+            mTypeInstances.put(item.getLayoutRes(), item);
+            if (DEBUG)
+                Log.i(TAG, "Mapped viewType " + item.getLayoutRes() + " from " + item.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * 根据view type 获取对应的对象
+     *
+     * @param viewType viewType
+     * @return T
+     */
+    private IFlexible getViewTypeInstance(int viewType) {
+        return mTypeInstances.get(viewType);
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        T flexible = mItems.get(position);
+        int viewType = getItemViewType(position);
+        IFlexible flexible = getViewTypeInstance(viewType);
+        if (flexible == null) {
+            flexible = mItems.get(position);
+            mapViewTypeFrom(flexible);
+        }
         ViewHolder viewHolder;
         if (convertView == null || convertView.getTag() == null) {
             viewHolder = flexible.createViewHolder(this, inflater, parent);
