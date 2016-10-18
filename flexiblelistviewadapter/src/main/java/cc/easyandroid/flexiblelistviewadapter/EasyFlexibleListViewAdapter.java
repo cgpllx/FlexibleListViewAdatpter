@@ -1,5 +1,6 @@
 package cc.easyandroid.flexiblelistviewadapter;
 
+import android.support.v4.util.ArrayMap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,19 +8,25 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
  * 通用listview适配器
  */
 public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapter {
+    public static String TAG = EasyFlexibleListViewAdapter.class.getSimpleName();
+
+    public static final int DEFAUL_TVIEWTYPECOUNT = 10;//默认是10
+
     public final LayoutInflater inflater;
+
     public OnItemClickListener mItemClickListener;
+
     public OnItemLongClickListener mItemLongClickListener;
 
     public static boolean DEBUG = true;
-    public static String TAG = EasyFlexibleListViewAdapter.class.getSimpleName();
+
+    private int mViewTypeCount;
 
     public EasyFlexibleListViewAdapter(LayoutInflater inflater) {
         this.inflater = inflater;
@@ -29,9 +36,17 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
 
     public void setItems(List<T> items) {
         mItems.clear();
-        //notifyItemRangeRemoved(getHeaderCount(), oldcount);
         mItems.addAll(items);
         notifyDataSetChanged();
+    }
+
+    /**
+     * 必须在设置setAdapter之前才会生效
+     *
+     * @param viewTypeCount
+     */
+    public void setViewTypeCount(int viewTypeCount) {
+        this.mViewTypeCount = viewTypeCount;
     }
 
     public boolean addItems(List<T> items) {
@@ -76,7 +91,7 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
     }
 
     @Override
-    public T getItem(int position) {
+    public IFlexible getItem(int position) {
         return mItems.get(position);
     }
 
@@ -86,8 +101,11 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
     }
 
     @Override
-    public int getItemViewType(int position) {
-        return mItems.get(position).getLayoutRes();
+    public int getItemViewType(int position) {//ItemViewType必须从0开始
+        IFlexible item = getItem(position);
+        //Map the view type if not done yet
+        mapViewTypeFrom(item);
+        return mTypeInstances.indexOfKey(item.getLayoutRes());
     }
 
     @Override
@@ -95,7 +113,8 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
         return getItem(position).isEnabled();
     }
 
-    private HashMap<Integer, IFlexible> mTypeInstances = new HashMap<>();
+    private ArrayMap<Integer, IFlexible> mTypeInstances = new ArrayMap<>();
+
 
     /**
      * 讲type和 t 映射mTypeInstancesz中
@@ -103,12 +122,16 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
      * @param item item
      */
     private void mapViewTypeFrom(IFlexible item) {
-
         if (item != null && !mTypeInstances.containsKey(item.getLayoutRes())) {
             mTypeInstances.put(item.getLayoutRes(), item);
             if (DEBUG)
                 Log.i(TAG, "Mapped viewType " + item.getLayoutRes() + " from " + item.getClass().getSimpleName());
         }
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return mViewTypeCount < DEFAUL_TVIEWTYPECOUNT ? DEFAUL_TVIEWTYPECOUNT : mViewTypeCount;
     }
 
     /**
@@ -123,19 +146,16 @@ public class EasyFlexibleListViewAdapter<T extends IFlexible> extends BaseAdapte
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        int viewType = getItemViewType(position);
-        IFlexible flexible = getViewTypeInstance(viewType);
-        if (flexible == null) {
-            flexible = mItems.get(position);
-            mapViewTypeFrom(flexible);
-        }
-        ViewHolder viewHolder;
-        if (convertView == null || convertView.getTag() == null) {
+//        int viewType = getItemViewType(position);
+        IFlexible flexible = getItem(position);
+        ViewHolder viewHolder;//|| convertView.getTag(flexible.getLayoutRes()) == null
+        if (convertView == null || convertView.getTag(flexible.getLayoutRes()) == null) {
             viewHolder = flexible.createViewHolder(this, inflater, parent);
             convertView = viewHolder.itemView;
-            convertView.setTag(viewHolder);
+            convertView.setTag(flexible.getLayoutRes(), viewHolder);
+            Log.i(TAG, "createViewHolder " + flexible.getLayoutRes() + " from " + flexible.getClass().getSimpleName());
         } else {
-            viewHolder = (ViewHolder) convertView.getTag();
+            viewHolder = (ViewHolder) convertView.getTag(flexible.getLayoutRes());
         }
         viewHolder.setRefreshPosition(position);
         flexible.bindViewHolder(this, viewHolder, position, null);

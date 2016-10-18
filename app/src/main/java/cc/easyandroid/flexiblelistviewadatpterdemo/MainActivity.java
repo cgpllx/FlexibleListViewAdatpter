@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import cc.easyandroid.flexiblelistviewadapter.EasyFlexibleListViewAdapter;
 import cc.easyandroid.flexiblelistviewadatpterdemo.pojo.IFITem;
+import cc.easyandroid.flexiblelistviewadatpterdemo.pojo.IFITem1;
 
 public class MainActivity extends AppCompatActivity {
     ListView listView;
@@ -22,12 +23,17 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         listView = (ListView) findViewById(R.id.listview);
         adapter = new EasyFlexibleListViewAdapter(getLayoutInflater());
-        ArrayList<IFITem> iFITems = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
+        ArrayList iFITems = new ArrayList<>();
+        for (int i = 0; i < 300; i++) {
             IFITem ifiTem = new IFITem();
+            ifiTem.setData("+i=" + i);
             iFITems.add(ifiTem);
         }
+        IFITem1 ifiTem1 = new IFITem1();
+        ifiTem1.setData("ddddddddddddd");
+        iFITems.add(0, ifiTem1);
         adapter.addItems(iFITems);
+        adapter.setViewTypeCount(2);
         listView.setAdapter(adapter);
     }
 
